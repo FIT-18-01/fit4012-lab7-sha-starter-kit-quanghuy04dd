@@ -1,0 +1,164 @@
+================================================================================
+FIT4012 Lab 7: SHA-256 Complete Test Results
+================================================================================
+Date: May 20, 2026
+Compiler: g++ 15.2.0 (MSYS2 project)
+
+================================================================================
+Q1: SHA-256 Self-Test and String Hashing
+================================================================================
+
+Running SHA-256 self-test with known test vectors:
+
+[PASS] input=""
+expected: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+actual  : e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+
+[PASS] input="abc"
+expected: ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+actual  : ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+
+[PASS] input="hello FIT4012 SHA"
+expected: e942ae0ecb44fe48e1490144162fc64e9c3c6c399bb4e2d686532195cdc3eae6
+actual  : e942ae0ecb44fe48e1490144162fc64e9c3c6c399bb4e2d686532195cdc3eae6
+
+Hashing different strings to observe input sensitivity:
+
+String: "abc"
+SHA-256: ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+
+String: "FIT4012"
+SHA-256: 04980625134a14f1db10c9bb1d80fe75d7baf070d41476db9df568012b30a12d
+
+String: "FIT4012!"
+SHA-256: 2707f292d79553c8f1bf07af888c146a42a66850dff66d7cf793ecb577ddaaa8
+
+Observation: Adding just one character (!) completely changes the hash output,
+demonstrating SHA-256's avalanche effect (high sensitivity to input changes).
+
+================================================================================
+Q2: File Integrity Verification
+================================================================================
+
+Creating sample file: "FIT4012 SHA sample\n"
+
+Initial file hash:
+0de77ca6b0acc905412bfcde0f16f42bffb943e6f94baf0aba2ced1bf82c579a
+
+File integrity check BEFORE tampering:
+[PASS] File integrity OK
+SHA-256: 0de77ca6b0acc905412bfcde0f16f42bffb943e6f94baf0aba2ced1bf82c579a
+
+Adding "tampered\n" to file...
+
+File integrity check AFTER tampering:
+[FAIL] File was changed or expected hash is incorrect
+expected: 0de77ca6b0acc905412bfcde0f16f42bffb943e6f94baf0aba2ced1bf82c579a
+actual  : a58a615368eb8e1dc451193eeef3e2aede66aecb86088c018e1cdb2cfbb0a439
+
+Result: SHA-256 successfully detects file modification.
+
+================================================================================
+Q3: Password Hash and Authentication (Without Salt)
+================================================================================
+
+Registering password "SecurePass123":
+[PASS] Password hash saved to password.hash
+
+Attempting login with CORRECT password:
+[PASS] Login success
+
+Attempting login with WRONG password:
+[FAIL] Login failed: wrong password
+
+Result: SHA-256-based password storage and verification works correctly for
+individual authentication, but lacks salt protection against rainbow tables.
+
+================================================================================
+Q4: Salted Password Hash (Enhanced Security)
+================================================================================
+
+Registering password "MyPassword" TWICE to demonstrate salt randomness:
+
+First registration:
+[PASS] Salted password hash saved to salted_password_1.hash
+Content: 56efab6c280a27c37d474d07c85391c0:0fa3941e32f6de5ab589ac3a6ba36f9d4fdce15d0630337f12e1a1997290a18e
+
+Second registration (SAME PASSWORD):
+[PASS] Salted password hash saved to salted_password_2.hash
+Content: cf7455b3d039c450db5bafd763ec8f32:2db7633571f6a5415e967d9781a0733e4b612dfedf3fe6779a05e38d72ea1937
+
+IMPORTANT: Despite registering the SAME PASSWORD twice, the results are 
+COMPLETELY DIFFERENT due to random salt generation. This prevents attackers 
+from building rainbow tables.
+
+Login tests:
+- Login with correct password to file 1: [PASS] Login success
+- Login with correct password to file 2: [PASS] Login success
+- Login with wrong password: [FAIL] Login failed: wrong password
+
+Result: Salt successfully prevents identical passwords from producing identical
+hashes while still allowing correct password verification.
+
+================================================================================
+Key Findings
+================================================================================
+
+1. PADDING MECHANISM:
+   - Input message is padded with 0x80 byte (1-bit followed by 0-bits)
+   - Additional 0x00 bytes added until message length ≡ 56 (mod 64)
+   - 64-bit Big Endian representation of original message length appended
+   - Ensures all messages align to 512-bit (64-byte) block boundaries
+
+2. 512-BIT BLOCKS:
+   - Why divide into 512-bit blocks?
+     * Computational efficiency
+     * Parallel processing capability
+     * Fixed-size chunks for consistent processing
+     * Standard block cipher design principle
+
+3. MESSAGE SCHEDULE W[0..63]:
+   - W[0..15]: Direct words from message block
+   - W[16..63]: Derived using formula with rotation (ROTR) and shift (SHR)
+   - Purpose: Expand 16 words to 64 words for 64 rounds of compression
+
+4. 64 ROUNDS OF COMPRESSION:
+   - Each round processes one W[t] value
+   - Uses working variables a-h and constants K256[t]
+   - Implements Ch (choice), Maj (majority) logical functions
+   - Sigma and sigma functions perform bit rotations/shifts
+   - Avalanche effect: small input changes cascade through all 64 rounds
+
+5. 256-BIT OUTPUT:
+   - Always 64 hexadecimal characters (256 bits / 4 bits per hex digit)
+   - Fixed length regardless of input size (ranging from 0 to 2^64-1 bits)
+   - Deterministic: same input always produces same output
+
+================================================================================
+Test Compliance Checklist
+================================================================================
+
+[✓] Programs compile successfully
+[✓] SHA-256 self-test passes (3/3 vectors)
+[✓] Multiple strings hashed with expected results
+[✓] File integrity detection works (tamper detected)
+[✓] Password registration and verification working
+[✓] Different salts for same password confirmed
+[✓] Correct password login succeeds
+[✓] Incorrect password login fails
+[✓] Log file created with evidence
+
+================================================================================
+Conclusion
+================================================================================
+
+SHA-256 implementation successfully demonstrates:
+- Cryptographic hash function properties (one-way, avalanche, fixed output)
+- Application to file integrity verification
+- Application to password storage (with and without salt)
+- Importance of salt in preventing rainbow table attacks
+
+For production systems, use specialized password hashing algorithms
+(bcrypt, scrypt, Argon2id) rather than SHA-256 alone.
+
+================================================================================
